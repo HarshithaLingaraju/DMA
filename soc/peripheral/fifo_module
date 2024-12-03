@@ -1,0 +1,73 @@
+module fifo #(
+    parameter DATA_WIDTH = 32, 
+    parameter DEPTH = 16
+    )(
+    input logic clk,
+    input logic rst,
+    
+    // Data Interface
+    input logic [DATA_WIDTH-1:0] data_in,
+    output logic full,
+    output logic [DATA_WIDTH-1:0] data_out,
+    output logic empty
+);
+
+// Instantiate Register Interface 
+    db_reg_intf #( 
+    .base_addr(CFG_BADR_FIFO),
+    .addr_mask(CFG_MADR_FIFO),
+    .reg_init(32'h00000000) 
+    ) db_reg_intf_inst (
+    .clk(clk), 
+    .rst(rst), 
+    .reg_data_o(data_in),
+    .dslv(dslv) 
+    ); 
+    
+    dma_controller #( 
+    parameter DATA_WIDTH = 32, // Width of the data being transferred 
+    parameter ADDR_WIDTH = 32, // Address width 
+    )dma_controller_inst (
+    .clk(clk),
+    .rst(rst),
+    .fifo_empty(empty), // FIFO Empty flag 
+    .fifo_full(full), // FIFO Full flag 
+    .data_in(data_out) 
+    );
+
+    logic [DATA_WIDTH-1:0] fifo_mem [0:DEPTH-1];
+    logic [$clog2(DEPTH)-1:0] write_ptr, read_ptr; 
+    logic [$clog2(DEPTH):0] count;
+    logic [DATA_WIDTH-1:0] prev_data_in;
+
+    // Write Logic
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            write_ptr <= 0;
+            count <= 0;
+            prev_data_in <= 0;
+        end else if (data_in != prev_data_in && !full) begin
+            fifo_mem[write_ptr] <= data_in;
+            write_ptr <= write_ptr + 1;
+            count <= count + 1;
+            prev_data_in <= data_in;
+        end
+    end
+
+    // Read Logic
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            read_ptr <= 0;
+            count <= 0;
+        end else if (!empty) begin
+            data_out <= fifo_mem[read_ptr];
+            read_ptr <= read_ptr + 1;
+            count <= count - 1;
+        end
+    end
+
+    // Flags
+    assign full = (count == DEPTH);
+    assign empty = (count == 0);
+
+endmodule
