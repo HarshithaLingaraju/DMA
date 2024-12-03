@@ -1,6 +1,6 @@
 ### Module Descriptions and Interfaces
 
-1. FIFO Module:
+1. ### FIFO Module:
    - Description: The FIFO (First-In-First-Out) module is used to buffer data frames. It stores incoming data frames and provides them to the DMA controller when requested. The FIFO ensures that data is read in the same order it was written.
    - Interface:
 
@@ -18,7 +18,7 @@
      );
 
 
-2. DMA Controller:
+2. ### DMA Controller:
    - Description: The DMA (Direct Memory Access) controller manages the transfer of data between the source and destination addresses. It reads data frames from the FIFO, extracts the source and destination addresses, and controls the read and write operations using the master interface.
    - Interface:
 
@@ -36,7 +36,7 @@
      );
 
 
-3. Master Interface:
+3. ### Master Interface:
    - Description: The master interface performs the actual read and write operations based on the signals from the DMA controller. It interfaces with the data bus to read data from the source address and write data to the destination address.
    - Interface:
 
@@ -55,7 +55,7 @@
      );
 
 
-4. DB_REG_INTF:
+4. ### DB_REG_INTF:
    - Description: The DB_REG_INTF (Data Bus Register Interface) module interfaces with the data bus and provides the necessary signals for communication between the DMA controller and the master interface.
    - Interface:
 
