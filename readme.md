@@ -86,5 +86,3 @@ module master_interface #(
 ```
 
 ---
-
-This layout ensures the Markdown file will display properly formatted code blocks and clear descriptions when viewed on GitHub.
