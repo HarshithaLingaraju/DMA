@@ -1,5 +1,7 @@
 ### Module Descriptions and Interfaces
 
+![alt text](image.png)
+
 1. ### FIFO Module:
    - Description: The FIFO (First-In-First-Out) module is used to buffer data frames. It stores incoming data frames and provides them to the DMA controller when requested. The FIFO ensures that data is read in the same order it was written.
    - Interface:
