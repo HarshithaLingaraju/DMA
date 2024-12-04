@@ -7,12 +7,17 @@
 
 - **Interface:**  
 ```verilog
-module db_reg_intf (
-    input  logic clk,
-    input  logic rst,
-    output logic [31:0] reg_data_o, // Data to DMA controller
-    DATA_BUS.Master dslv            // Data bus
+module db_reg_intf #(
+	parameter base_addr_type base_addr = CFG_BADR_LED,
+	parameter addr_mask_type addr_mask = CFG_MADR_LED,
+	parameter logic [31:0] reg_init  = '0
+) (
+	input  logic clk,
+	input  logic rst,
+	output logic [31:0] reg_data_o,
+	DATA_BUS.Slave dslv
 );
+
 ```
 
 ---
