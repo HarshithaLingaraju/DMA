@@ -1,19 +1,19 @@
 import data_bus_pkg::*;
 import config_pkg::*;
 
-module db_reg_intf_simple #(
+module db_reg_intf #(
 	parameter base_addr_type base_addr = CFG_BADR_LED,
 	parameter addr_mask_type addr_mask = CFG_MADR_LED,
 
 	parameter logic [31:0] reg_init  = '0
-	) (
+) (
 	input  logic clk,
 	input  logic rst,
 
 	output logic [31:0] reg_data_o,
 	
 	DATA_BUS.Slave dslv
-	);
+);
 
 	typedef enum { IDLE, ACCESS } ACCESS_STATE;
 	ACCESS_STATE state_q, state_d;

@@ -1,36 +1,39 @@
 module dma_controller #(
-    parameter ADDR_WIDTH = 8,
-    parameter DATA_WIDTH = 32
-) (
-    input  logic clk,
-    input  logic rst,
-    input  logic [DATA_WIDTH-1:0] data_in, // Input data frame
-    output logic [DATA_WIDTH-1:0] data_out, // Output data
-    DATA_BUS.Master dma_mst // Data bus interface
+    parameter DATA_WIDTH = 32, // Width of the data being transferred
+    parameter ADDR_WIDTH = 32  // Address width
+)(
+    input logic clk,
+    input logic rst,
+    input logic [DATA_WIDTH-1:0] data_in,
+    input logic fifo_empty,
+    input logic fifo_full
+    output logic [DATA_WIDTH-1:0] data_out
+
 );
 
+    // State definitions
+    typedef enum logic [1:0] {
+        IDLE,
+        READ,
+        WRITE
+    } state_t;
+
+    state_t state, next_state;
+
     // Internal signals
-    logic fifo_full, fifo_empty;
-    logic [DATA_WIDTH-1:0] fifo_data_out;
-    logic dma_read, dma_write;
-    logic [DATA_WIDTH-1:0] read_data;
     logic [ADDR_WIDTH-1:0] src_addr, dest_addr, transfer_len;
-    logic ready;
+    logic dma_read, dma_write;
 
-    // Instantiate FIFO module
-    fifo #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .DEPTH(16)
-    ) fifo_inst (
-        .clk(clk),
-        .rst(rst),
-        .data_in(data_in),
-        .full(fifo_full),
-        .empty(fifo_empty),
-        .data_out(fifo_data_out)
-    );
+    // FSM state transition
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
+        end else begin
+            state <= next_state;
+        end
+    end
 
-    // Parse the data frame from FIFO
+    // FSM output logic
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             src_addr <= 0;
@@ -38,43 +41,53 @@ module dma_controller #(
             transfer_len <= 0;
             dma_read <= 0;
             dma_write <= 0;
-        end else if (!fifo_empty) begin
-            src_addr <= fifo_data_out[31:24]; // Bits 31 to 24 for source address
-            dest_addr <= fifo_data_out[23:16]; // Bits 23 to 16 for destination address
-            transfer_len <= fifo_data_out[15:8]; // Bits 15 to 8 for transfer length
-            dma_read <= 1;
-            dma_write <= 0;
-        end else if (ready && dma_read) begin
-            dma_read <= 0;
-            dma_write <= 1;
-        end else if (ready && dma_write) begin
-            dma_write <= 0;
+            data_out <= 0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    dma_read <= 0;
+                    dma_write <= 0;
+                    if (!fifo_empty) begin
+                        src_addr <= data_in[31:24]; // Bits 31 to 24 for source address
+                        dest_addr <= data_in[23:16]; // Bits 23 to 16 for destination address
+                        transfer_len <= data_in[15:8]; // Bits 15 to 8 for transfer length
+                    end
+                end
+                READ: begin
+                    dma_read <= 1;
+                    dma_write <= 0;
+                end
+                WRITE: begin
+                    dma_read <= 0;
+                    dma_write <= 1;
+                end
+            endcase
         end
     end
-
-    // Instantiate Master Interface
-    master_interface #(
-        .base_addr(CFG_BADR_LED),
-        .addr_mask(CFG_MADR_LED)
-    ) master_inst (
-        .clk(clk),
-        .rst(rst),
-        .dma_addr(dma_read ? src_addr : dest_addr),
-        .dma_read(dma_read),
-        .write_data(read_data),
-        .reg_data_o(read_data),
-        .ready(ready),
-        .dslv(dma_mst)
-    );
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             data_out <= 0;
-        end else if (dma_read && ready) begin
+        end else if (dma_read) begin
             data_out <= read_data;
-        end else if (dma_write && ready) begin
+        end else if (dma_write) begin
             data_out <= read_data;
         end
     end
+
+
+// Instantiate Master Interface
+master_interface #(
+    .base_addr(CFG_BADR_LED),
+    .addr_mask(CFG_MADR_LED)
+) master_inst (
+    .clk(clk),
+    .rst(rst),
+    .dma_addr(dma_read ? src_addr : dest_addr),
+    .dma_read(dma_read),
+    .write_data(read_data),
+    .reg_data_o(read_data),
+    .dslv(dma_mst)
+);
 
 endmodule

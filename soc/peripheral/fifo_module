@@ -1,7 +1,7 @@
 module fifo #(
     parameter DATA_WIDTH = 32, 
     parameter DEPTH = 16
-    )(
+)(
     input logic clk,
     input logic rst,
     
@@ -12,32 +12,33 @@ module fifo #(
     output logic empty
 );
 
-// Instantiate Register Interface 
+    // Instantiate Register Interface 
     db_reg_intf #( 
-    .base_addr(CFG_BADR_FIFO),
-    .addr_mask(CFG_MADR_FIFO),
-    .reg_init(32'h00000000) 
+        .base_addr(CFG_BADR_FIFO),
+        .addr_mask(CFG_MADR_FIFO),
+        .reg_init(32'h00000000) 
     ) db_reg_intf_inst (
-    .clk(clk), 
-    .rst(rst), 
-    .reg_data_o(data_in),
-    .dslv(dslv) 
+        .clk(clk), 
+        .rst(rst), 
+        .reg_data_o(data_in),
+        .dslv(dslv) 
     ); 
     
+    // Instantiate DMA Controller
     dma_controller #( 
-    parameter DATA_WIDTH = 32, // Width of the data being transferred 
-    parameter ADDR_WIDTH = 32, // Address width 
-    )dma_controller_inst (
-    .clk(clk),
-    .rst(rst),
-    .fifo_empty(empty), // FIFO Empty flag 
-    .fifo_full(full), // FIFO Full flag 
-    .data_in(data_out) 
+        .DATA_WIDTH(DATA_WIDTH), // Width of the data being transferred 
+        .ADDR_WIDTH(ADDR_WIDTH)  // Address width 
+    ) dma_controller_inst (
+        .clk(clk),
+        .rst(rst),
+        .fifo_empty(empty), // FIFO Empty flag 
+        .fifo_full(full),   // FIFO Full flag 
+        .data_in(data_out) 
     );
 
-    logic [DATA_WIDTH-1:0] fifo_mem [0:DEPTH-1];
-    logic [$clog2(DEPTH)-1:0] write_ptr, read_ptr; 
-    logic [$clog2(DEPTH):0] count;
+    logic [DATA_WIDTH-1:0] fifo_mem [0:DEPTH-1];  //it is 32 bits wide .The number of elements the FIFO can hold is 16.
+    logic [$clog2(DEPTH)-1:0] write_ptr, read_ptr;  //DEPTH = 16: [ \log_2(16) = 4 ]
+    logic [$clog2(DEPTH):0] count; 
     logic [DATA_WIDTH-1:0] prev_data_in;
 
     // Write Logic
