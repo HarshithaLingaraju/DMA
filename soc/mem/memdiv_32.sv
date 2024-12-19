@@ -1,7 +1,7 @@
 import config_pkg::*;
 
 `ifndef PROGRAMFILENAME
-    `define PROGRAMFILENAME "/import/lab/esylab/esylab07/Git/esylabrv/programs/blinky.rom"
+    `define PROGRAMFILENAME "/import/lab/users/lingaraju/Schreibtisch/DMA_Design/programs/dma_assembly.rom"
 `endif
 
 module memdiv_32 (

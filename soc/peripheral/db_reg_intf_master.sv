@@ -1,9 +1,9 @@
 import data_bus_pkg::*;
 import config_pkg::*;
 
-module master_interface #(
-    parameter base_addr_type base_addr = CFG_BADR_LED,
-    parameter addr_mask_type addr_mask = CFG_MADR_LED
+module db_reg_intf_master #(
+    parameter base_addr_type base_addr = CFG_BADR_DMA,
+    parameter addr_mask_type addr_mask = CFG_BADR_DMA
 ) (
     input  logic clk,
     input  logic rst,

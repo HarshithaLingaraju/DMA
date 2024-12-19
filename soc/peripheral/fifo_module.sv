@@ -1,21 +1,19 @@
-module fifo #(
-    parameter DATA_WIDTH = 32, 
-    parameter DEPTH = 16
+module fifo_module #(
+    parameter base_addr_type base_addr = CFG_BADR_DMA,
+	parameter addr_mask_type addr_mask = CFG_MADR_DMA
 )(
     input logic clk,
     input logic rst,
-    
-    // Data Interface
-    input logic [DATA_WIDTH-1:0] data_in,
-    output logic full,
-    output logic [DATA_WIDTH-1:0] data_out,
-    output logic empty
+    output logic [95:0] data_out,
+    input logic empty,
+    input logic full,
+    input logic [31:0] data_in [2:0]
 );
 
     // Instantiate Register Interface 
     db_reg_intf #( 
-        .base_addr(CFG_BADR_FIFO),
-        .addr_mask(CFG_MADR_FIFO),
+        .base_addr(CFG_BADR_DMA),
+        .addr_mask(CFG_MADR_DMA),
         .reg_init(32'h00000000) 
     ) db_reg_intf_inst (
         .clk(clk), 
@@ -26,7 +24,7 @@ module fifo #(
     
     // Instantiate DMA Controller
     dma_controller #( 
-        .DATA_WIDTH(DATA_WIDTH), // Width of the data being transferred 
+        .DATA_WIDTH(96), // Width of the data being transferred 
         .ADDR_WIDTH(ADDR_WIDTH)  // Address width 
     ) dma_controller_inst (
         .clk(clk),
@@ -36,19 +34,25 @@ module fifo #(
         .data_in(data_out) 
     );
 
-    logic [DATA_WIDTH-1:0] fifo_mem [0:DEPTH-1];  //it is 32 bits wide .The number of elements the FIFO can hold is 16.
-    logic [$clog2(DEPTH)-1:0] write_ptr, read_ptr;  //DEPTH = 16: [ \log_2(16) = 4 ]
+    localparam DATA_WIDTH = 96;  // Update DATA_WIDTH to 96 bits
+    localparam DEPTH = 16;       // Number of elements the FIFO can hold
+
+    logic [DATA_WIDTH-1:0] fifo_mem [0:DEPTH-1];  // FIFO memory, 96 bits wide
+    logic [$clog2(DEPTH)-1:0] write_ptr, read_ptr;  // DEPTH = 16: [ \log_2(16) = 4 ]
     logic [$clog2(DEPTH):0] count; 
-    logic [DATA_WIDTH-1:0] prev_data_in;
+    logic [31:0] prev_data_in [2:0];
+    logic [DATA_WIDTH-1:0] combined_data;  // Combined data element, 96 bits wide
 
     // Write Logic
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             write_ptr <= 0;
             count <= 0;
-            prev_data_in <= 0;
-        end else if (data_in != prev_data_in && !full) begin
-            fifo_mem[write_ptr] <= data_in;
+            prev_data_in <= '{0, 0, 0};
+        end else if (!full) begin
+            // Combine the three 32-bit elements into one 96-bit element
+            combined_data <= {data_in[2], data_in[1], data_in[0]};
+            fifo_mem[write_ptr] <= combined_data;
             write_ptr <= write_ptr + 1;
             count <= count + 1;
             prev_data_in <= data_in;
@@ -66,9 +70,4 @@ module fifo #(
             count <= count - 1;
         end
     end
-
-    // Flags
-    assign full = (count == DEPTH);
-    assign empty = (count == 0);
-
 endmodule

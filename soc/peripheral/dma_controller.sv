@@ -1,13 +1,16 @@
+import data_bus_pkg::*;
+import config_pkg::*;
+
 module dma_controller #(
-    parameter DATA_WIDTH = 32, // Width of the data being transferred
-    parameter ADDR_WIDTH = 32  // Address width
+    parameter base_addr_type base_addr = CFG_BADR_DMA,
+	parameter addr_mask_type addr_mask = CFG_MADR_DMA
 )(
     input logic clk,
     input logic rst,
-    input logic [DATA_WIDTH-1:0] data_in,
+    input logic [95:0] data_in,
     input logic fifo_empty,
-    input logic fifo_full
-    output logic [DATA_WIDTH-1:0] data_out
+    input logic fifo_full,
+    output logic [31:0] data_out
 
 );
 
@@ -21,8 +24,10 @@ module dma_controller #(
     state_t state, next_state;
 
     // Internal signals
-    logic [ADDR_WIDTH-1:0] src_addr, dest_addr, transfer_len;
+    logic [31:0] src_addr, dest_addr, transfer_len;
     logic dma_read, dma_write;
+    logic [95:0] prev_data_in;
+    logic [31:0] read_data;
 
     // FSM state transition
     always_ff @(posedge clk or posedge rst) begin
@@ -47,11 +52,13 @@ module dma_controller #(
                 IDLE: begin
                     dma_read <= 0;
                     dma_write <= 0;
-                    if (!fifo_empty) begin
-                        src_addr <= data_in[31:24]; // Bits 31 to 24 for source address
-                        dest_addr <= data_in[23:16]; // Bits 23 to 16 for destination address
-                        transfer_len <= data_in[15:8]; // Bits 15 to 8 for transfer length
-                    end
+                    if (!fifo_empty)
+                        if (data_in != prev_data_in) begin
+                            src_addr <= data_in[31:24]; // Bits 31 to 24 for source address
+                            dest_addr <= data_in[23:16]; // Bits 23 to 16 for destination address
+                            transfer_len <= data_in[15:8]; // Bits 15 to 8 for transfer length
+                            next_state <= READ;
+                        end 
                 end
                 READ: begin
                     dma_read <= 1;
@@ -77,10 +84,10 @@ module dma_controller #(
 
 
 // Instantiate Master Interface
-master_interface #(
-    .base_addr(CFG_BADR_LED),
-    .addr_mask(CFG_MADR_LED)
-) master_inst (
+db_reg_intf_master #(
+    .base_addr(CFG_BADR_DMA),
+    .addr_mask(CFG_BADR_DMA)
+) db_reg_intf_master_inst (
     .clk(clk),
     .rst(rst),
     .dma_addr(dma_read ? src_addr : dest_addr),

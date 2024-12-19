@@ -2,22 +2,25 @@ import data_bus_pkg::*;
 import config_pkg::*;
 
 module db_reg_intf #(
-	parameter base_addr_type base_addr = CFG_BADR_LED,
-	parameter addr_mask_type addr_mask = CFG_MADR_LED,
+	parameter base_addr_type base_addr = CFG_BADR_DMA,
+	parameter addr_mask_type addr_mask = CFG_MADR_DMA,
+	parameter int unsigned n_words = 3,
 
-	parameter logic [31:0] reg_init  = '0
+	parameter logic [n_words - 1:0] [31:0] reg_init  = '0
 ) (
 	input  logic clk,
 	input  logic rst,
 
-	output logic [31:0] reg_data_o,
-	
+	output logic [n_words - 1:0] [31:0] reg_data_o, 
+		
 	DATA_BUS.Slave dslv
 );
 
 	typedef enum { IDLE, ACCESS } ACCESS_STATE;
 	ACCESS_STATE state_q, state_d;
-	logic [31:0] reg_data_q, reg_data_d;
+	logic [n_words - 1:0] [31:0] reg_data_q, reg_data_d;
+	logic [31:0] curr_addr;
+	logic [31:0] n;
 
 	assign reg_data_o = reg_data_q;
 
@@ -36,7 +39,10 @@ module db_reg_intf #(
                 if(dslv.req) begin
 					dslv.gnt = 1'b1;
 					if (dslv.we)  // write request
-						reg_data_d = dslv.wdata;					
+						//reg_data_d = dslv.wdata;
+						curr_addr = dslv.addr;
+						n = (curr_addr - base_addr)/4;
+						reg_data_d[n] = dslv.wdata;
 					state_d  = ACCESS;
 				end else begin
 					dslv.gnt = 1'b0;
@@ -49,7 +55,10 @@ module db_reg_intf #(
 					dslv.gnt = 1'b1;
 					state_d  = ACCESS;
 					if (dslv.we)
-						reg_data_d = dslv.wdata;
+						//reg_data_d = dslv.wdata;
+						curr_addr = dslv.addr;
+						n = (curr_addr - base_addr)/4;
+						reg_data_d[n] = dslv.wdata;
 				end else begin         // no new request
 					dslv.gnt = 1'b0;
 					state_d  = IDLE;

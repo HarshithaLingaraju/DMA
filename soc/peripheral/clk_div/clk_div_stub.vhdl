@@ -1,10 +1,10 @@
 -- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2020.1 (lin64) Build 2902540 Wed May 27 19:54:35 MDT 2020
--- Date        : Tue Apr 30 13:57:46 2024
--- Host        : digilab4 running 64-bit Ubuntu 22.04.4 LTS
+-- Date        : Wed Dec 18 15:38:40 2024
+-- Host        : vernaccia running 64-bit Ubuntu 22.04.5 LTS
 -- Command     : write_vhdl -force -mode synth_stub
---               /import/lab/esylab/esylab07/Git/esylabrv/soc/peripheral/clk_div/clk_div_stub.vhdl
+--               /import/lab/users/lingaraju/Schreibtisch/DMA_Design/soc/peripheral/clk_div/clk_div_stub.vhdl
 -- Design      : clk_div
 -- Purpose     : Stub declaration of top-level module interface
 -- Device      : xc7a100tcsg324-1
